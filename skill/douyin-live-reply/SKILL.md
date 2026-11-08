@@ -8,7 +8,7 @@ description: >-
 
 # 抖音直播间接管（扩展 + Gateway）
 
-收发由 audience-bot 仓库的 `extension/douyin-live/` 扩展完成，Gateway 负责把消息送进对话（设计见仓库的 `docs/design.md`）。本对话**不轮询、不起后台进程**：弹幕和主播语音以 `<gateway_messages>` 事件到达。
+收发由 audience-bot 仓库的 `miniapp/extension/` 扩展完成，Gateway 负责把消息送进对话（设计见仓库的 `docs/design.md`）。本对话**不轮询、不起后台进程**：弹幕和主播语音以 `<gateway_messages>` 事件到达。
 
 下文 `<home>` 是应用主目录（Dozin Preview 为 `~/.dozin_preview`，正式版 `~/.dozin`）；`<repo>` 是用户 clone audience-bot 仓库的目录，不知道就问用户。
 
@@ -17,7 +17,7 @@ description: >-
 - `gateway_sources`：Gateway 必须是 `open`。不是就请用户在 设置 › Gateway 打开，停在这里。
 - 看结果里有没有 `douyin-live`（种类 `extension`）：
   - 有：扩展已在运行，跳到第 1 步。
-  - 没有：确认 `<home>/extensions/packages/douyin-live/` 是否存在。不存在就把 `<repo>/extension/douyin-live/` 下的 `package.json`、`index.mjs`、`room.mjs` 原样复制过去（不改内容）。然后用 `menu {"tab":"extensions"}` 打开 设置 › Extensions，请用户批准并打开 `douyin-live`。用户说好了，再调 `gateway_sources` 确认出现 `douyin-live`；没出现就停下，说明卡在哪一步。
+  - 没有：确认 `<home>/extensions/packages/douyin-live/` 是否存在。不存在就 `miniapp_install` `<repo>/miniapp`（小程序和扩展一起装）。然后用 `menu {"tab":"extensions"}` 打开 设置 › Extensions，请用户批准并打开 `douyin-live`。用户说好了，再调 `gateway_sources` 确认出现 `douyin-live`；没出现就停下，说明卡在哪一步。
 - 定位用户指定的 `https://live.douyin.com/<room>` 标签页，用 `page_snapshot` 确认是直播间、已登录、输入框在。只用这个标签页。
 - 取得本账号显示名（用户给过就沿用），作为 `ownName`：自己的消息只作上下文，绝不回复。
 
@@ -30,6 +30,7 @@ description: >-
 ```
 
 - `voiceFile` 只在要主播语音时写：先按 [references/local-runtime.md](references/local-runtime.md) 确认采音程序和识别桥在跑、快照在更新（由仓库 `kit/` 的脚本启动，不在本对话里起）。路径写绝对路径（把 `~` 展开）。采音范围是整个应用音轨，先请用户确认 Dozin 里只有这个直播在出声。不要语音就不写这一项。
+- 采音自检（Ral 2026-11-08 选按标签页采音，第一步）：用户要试时在 `target.json` 加 `"voice": "tab"`，这时不读 `voiceFile`。扩展只采这个标签页的声音、每秒在直播间左下角面板写一行「采音：本标签页 · 音量 … dB / 静音」，还不识别、不进对话。请用户按设计 #8.1 的五项看：有声时音量跳动、另一个标签页出声时这里仍静音、直播声音照常外放、不弹录屏权限、刷新后接着采。面板写「采音失败：…」时把原因告诉用户。
 - 扩展每秒读这个文件，内容变了就换目标。
 
 ## 2. 允许标签页

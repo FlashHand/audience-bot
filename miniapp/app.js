@@ -6,6 +6,10 @@
 /** The connectors directory the douyin-live extension registers under (its package name). */
 export const CONNECTOR_DIR = 'douyin-live';
 export const EXAMPLE = '把Audience BOT 的人格改得更活泼一点，多跟观众互动';
+/** Step 2: what the person says in the chat beside the live room (the douyin-live-reply skill takes it from there). */
+export const TAKEOVER = '接管这个抖音直播间';
+/** Whether the three steps are folded, in this mini app's own localStorage. */
+export const STEPS_KEY = 'audience-bot.steps.collapsed';
 const DEFAULT_LIMIT = 16384;
 
 const TEXT = {
@@ -27,7 +31,7 @@ const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
  * Wires the page. `sdk` is window.MAESTROSDK (may be missing on older Dozin builds or in a plain browser);
  * `clipboard` defaults to navigator.clipboard. Returns the page state for tests.
  */
-export function mount(doc, sdk, { clipboard } = {}) {
+export function mount(doc, sdk, { clipboard, storage } = {}) {
   const el = (name) => doc.querySelector(`[name="${name}"]`);
   const editor = el('audience-bot__persona-text');
   const pathEl = el('audience-bot__persona-path');
@@ -42,6 +46,10 @@ export function mount(doc, sdk, { clipboard } = {}) {
   const copyPath = el('audience-bot__copy-path');
   const copyExample = el('audience-bot__copy-example');
   el('audience-bot__example-text').textContent = EXAMPLE;
+  el('audience-bot__takeover-text').textContent = TAKEOVER;
+  const stepsToggle = el('audience-bot__steps-toggle');
+  const stepsList = el('audience-bot__steps-list');
+  const copyTakeover = el('audience-bot__copy-takeover');
 
   const connectors = sdk?.connectors;
   const board = clipboard ?? globalThis.navigator?.clipboard;
@@ -181,6 +189,31 @@ export function mount(doc, sdk, { clipboard } = {}) {
     })));
     await load();
   })();
+
+  // The three steps: folded or not, remembered across restarts (this app's own partition).
+  const readFolded = () => {
+    try {
+      return (storage ?? globalThis.localStorage)?.getItem(STEPS_KEY) === '1';
+    } catch {
+      return false;
+    }
+  };
+  const fold = (folded) => {
+    stepsList.hidden = folded;
+    stepsToggle.textContent = folded ? '展开' : '收起';
+    stepsToggle.setAttribute('aria-expanded', folded ? 'false' : 'true');
+  };
+  fold(readFolded());
+  stepsToggle.addEventListener('click', () => {
+    const folded = !stepsList.hidden;
+    fold(folded);
+    try {
+      (storage ?? globalThis.localStorage)?.setItem(STEPS_KEY, folded ? '1' : '0');
+    } catch {
+      // Not remembered this time; the page still works.
+    }
+  });
+  copyTakeover.addEventListener('click', () => void copy(copyTakeover, TAKEOVER));
 
   // Carries the file path, so the AI edits the right file.
   copyExample.addEventListener('click', () => void copy(copyExample, state.path ? `${EXAMPLE}（人格文件：${state.path}）` : EXAMPLE));

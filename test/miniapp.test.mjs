@@ -4,7 +4,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { parseHTML } from 'linkedom'
-import { mount, EXAMPLE, CONNECTOR_DIR } from '../miniapp/app.js'
+import { mount, EXAMPLE, CONNECTOR_DIR, TAKEOVER, STEPS_KEY } from '../miniapp/app.js'
 
 const html = readFileSync(new URL('../miniapp/index.html', import.meta.url), 'utf8')
 const settle = async () => { for (let i = 0; i < 10; i++) await new Promise((done) => setImmediate(done)) }
@@ -156,4 +156,36 @@ test('over 16 KB is flagged but can still be saved; copies carry the file path; 
     '/home/u/.dozin/connectors/douyin-live/Agent.md',
     `${EXAMPLE}（人格文件：/home/u/.dozin/connectors/douyin-live/Agent.md）`
   ])
+})
+
+test('the three steps: the takeover sentence is shown and copied; folding is remembered in the page storage', async () => {
+  const data = new Map()
+  const storage = { getItem: (key) => (data.has(key) ? data.get(key) : null), setItem: (key, value) => data.set(key, String(value)) }
+  const copied = []
+  const p = page()
+  await mount(p.document, fakeSdk(), { clipboard: { writeText: async (text) => { copied.push(text) } }, storage }).ready
+  assert.equal(p.el('audience-bot__takeover-text').textContent, TAKEOVER)
+  p.click('audience-bot__copy-takeover')
+  await settle()
+  assert.deepEqual(copied, [TAKEOVER])
+  assert.equal(p.el('audience-bot__steps-list').hidden, false)
+  p.click('audience-bot__steps-toggle')
+  assert.equal(p.el('audience-bot__steps-list').hidden, true)
+  assert.equal(p.el('audience-bot__steps-toggle').textContent, '展开')
+  assert.equal(data.get(STEPS_KEY), '1')
+
+  const again = page()
+  await mount(again.document, fakeSdk(), { clipboard: { writeText: async () => {} }, storage }).ready
+  assert.equal(again.el('audience-bot__steps-list').hidden, true, 'folded across a reload')
+  again.click('audience-bot__steps-toggle')
+  assert.equal(again.el('audience-bot__steps-list').hidden, false)
+  assert.equal(data.get(STEPS_KEY), '0')
+})
+
+test('the install guide opens the mini app and never connects it to the Gateway', () => {
+  const guide = readFileSync(new URL('../miniapp/INSTALL.md', import.meta.url), 'utf8')
+  const manifest = JSON.parse(readFileSync(new URL('../miniapp/miniapp.json', import.meta.url), 'utf8'))
+  assert.match(guide, new RegExp(`open_miniapp[^\\n]*miniapp:${manifest.appId.replace(/\./g, '\\.')}`))
+  assert.doesNotMatch(guide, /gateway_attach|gateway_register/)
+  assert.match(guide, /不要替用户批准/)
 })

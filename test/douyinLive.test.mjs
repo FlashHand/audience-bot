@@ -7,8 +7,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseHTML } from 'linkedom'
 
-const packageDir = new URL('../extension/douyin-live/', import.meta.url)
-const { observeRoom, sendInRoom } = await import(new URL('room.mjs', packageDir))
+const packageDir = new URL('../miniapp/extension/', import.meta.url)
+const { addToPanel, observeRoom, sendInRoom, setPanelStatus, showPanel } = await import(new URL('room.mjs', packageDir))
+const { FLOOR_DB, failureText, levelDb, levelText, startTabVoice } = await import(new URL('voice.mjs', packageDir))
 const { activate, replyText } = await import(new URL('index.mjs', packageDir))
 
 const settle = async () => { for (let i = 0; i < 10; i++) await new Promise((done) => setImmediate(done)) }
@@ -37,12 +38,13 @@ const withPage = async (page, globals, run) => {
 }
 
 test('the package needs only its name and the browser capability; its connector has a chat and a short system prompt', async () => {
-  assert.deepEqual(readdirSync(packageDir).sort(), ['index.mjs', 'package.json', 'room.mjs'])
+  assert.deepEqual(readdirSync(packageDir).sort(), ['index.mjs', 'package.json', 'room.mjs', 'voice.mjs'])
   const manifest = JSON.parse(readFileSync(new URL('package.json', packageDir), 'utf8'))
   assert.equal(manifest.name, 'douyin-live', 'the connectors directory is named after the package')
   assert.equal(manifest.main, undefined, 'the entry falls back to index.mjs')
   assert.equal(manifest.pi, undefined)
-  assert.deepEqual(manifest.dozin.capabilities, ['browser'])
+  assert.deepEqual(manifest.dozin.capabilities, ['browser', 'audio'])
+  assert.equal(manifest.dozin.platforms, undefined, 'no platform gate: comments keep working where audio cannot')
   assert.deepEqual(manifest.dozin.origins, ['https://live.douyin.com'])
   let definition
   activate({ registerConnector: (value) => { definition = value }, log() {} })
@@ -121,7 +123,7 @@ test('connector: waits for target.json, takes the tab, emits comments and new vo
   const browser = {
     async adoptTab(tabId) { calls.push(['adopt', tabId]); if (!granted) throw Object.assign(new Error('tab_not_granted'), { code: 'tab_not_granted' }); return { tabId, url: 'https://live.douyin.com/123456789012', documentId: 1 } },
     async releaseTab(tabId) { calls.push(['release', tabId]) },
-    async inject(tabId, script) { calls.push(['inject', tabId, script.id, script.args]); assert.match(script.source, /webcast-chatroom___list/) },
+    async inject(tabId, script) { calls.push(['inject', tabId, script.id, script.args]); assert.match(script.source, script.id === 'audience-panel' ? /__audienceBotPanel/ : /webcast-chatroom___list/) },
     async evaluate(tabId, script) { calls.push(['evaluate', tabId, script.args]); return { ok: true, verified: true } },
     onEvent(fn) { listener = fn; return () => { listener = undefined } }
   }
@@ -136,7 +138,8 @@ test('connector: waits for target.json, takes the tab, emits comments and new vo
   assert.deepEqual(calls.at(-1), ['adopt', 'tab-28'], 'tries the tab, waits while it is not allowed')
   granted = true
   await new Promise((done) => setTimeout(done, 1100))
-  assert.deepEqual(calls.slice(-2).map((call) => call[0]), ['adopt', 'inject'])
+  assert.deepEqual(calls.slice(-3).map((call) => call[0]), ['adopt', 'inject', 'inject'])
+  assert.deepEqual(calls.at(-2), ['inject', 'tab-28', 'audience-panel', { title: 'Audience BOT' }], 'the panel goes in first')
   assert.deepEqual(calls.at(-1), ['inject', 'tab-28', 'douyin-comments', { ownName: '我' }])
 
   listener({ type: 'message', tabId: 'tab-28', injectionId: 'douyin-comments', data: { id: 'c1', text: '主播好', senderName: '小王', role: 'viewer', at: 5 } })
@@ -148,11 +151,14 @@ test('connector: waits for target.json, takes the tab, emits comments and new vo
   await new Promise((done) => setTimeout(done, 1100))
   const voice = emits.filter((message) => message.role === 'host')
   assert.deepEqual(voice.map(({ text, msgId, modality }) => ({ text, msgId, modality })), [{ text: '欢迎大家', msgId: 'voice-v1', modality: 'voice' }], 'only lines after the takeover, each once')
+  const panelAdds = calls.filter((call) => call[0] === 'evaluate' && call[2]?.items)
+  assert.equal(panelAdds.length, 1, 'the host\'s new line goes to the panel once')
+  assert.deepEqual(panelAdds[0][2].items.map(({ role, text }) => ({ role, text })), [{ role: 'host', text: '欢迎大家' }])
 
   const reply = { text: '马上安排', idempotencyKey: 'k1', replyTo: { id: 'c1', senderId: '', senderName: '小王', role: 'viewer' } }
   assert.deepEqual(await definition.send(reply), { ok: true, verified: true })
   assert.deepEqual(await definition.send(reply), { ok: true, verified: true })
-  const evaluations = calls.filter((call) => call[0] === 'evaluate')
+  const evaluations = calls.filter((call) => call[0] === 'evaluate' && call[2]?.room)
   assert.equal(evaluations.length, 1, 'the same key is sent once')
   assert.deepEqual(evaluations[0][2], { room: '123456789012', text: '@小王 马上安排' })
 
@@ -161,4 +167,207 @@ test('connector: waits for target.json, takes the tab, emits comments and new vo
   assert.deepEqual(calls.at(-1), ['release', 'tab-28'], 'leaving the room lets the tab go')
   await definition.stop()
   assert.equal(listener, undefined)
+})
+
+// docs/design.md #7: the monitor panel — four roles, last 20, the AI's echo shown once, collapsible, gone on dispose.
+test('panel: shows viewers, the host and the AI; the AI echo is one row whichever comes first; 20 rows; collapses; leaves', async () => {
+  const page = roomPage()
+  let dispose
+  await withPage(page, {}, async () => {
+    showPanel({ title: 'Audience BOT' }, { onDispose: (fn) => { dispose = fn } })
+    const panel = globalThis.__audienceBotPanel
+    assert.ok(panel, 'the panel is reachable for the other injections')
+    panel.add({ role: 'viewer', name: '小王', text: '主播好', at: 1 })
+    panel.add({ role: 'host', text: '欢迎大家', at: 2 })
+    panel.add({ role: 'self', text: '@小王 来啦', at: 3 })
+    panel.add({ role: 'ai', text: '@小王 来啦', at: 4 })
+    panel.add({ role: 'ai', text: '谢谢支持', at: 5 })
+    panel.add({ role: 'self', text: '谢谢支持', at: 6 })
+    panel.add({ role: 'self', text: '我自己打的', at: 7 })
+    panel.add({ role: 'nobody', text: 'x', at: 8 })
+    panel.add({ role: 'viewer', text: '   ', at: 9 })
+    panel.add({ role: 'viewer', name: '<b>x</b>', text: '<img src=x onerror=alert(1)>', at: 10 })
+    const rows = () => [...page.document.querySelectorAll('[data-audience-bot="panel"] [data-role]')]
+    assert.deepEqual(rows().map((row) => [row.getAttribute('data-role'), row.textContent]), [
+      ['viewer', '观众 · 小王：主播好'],
+      ['host', '主播（语音）：欢迎大家'],
+      ['ai', 'AI：@小王 来啦'],
+      ['ai', 'AI：谢谢支持'],
+      ['self', '自己：我自己打的'],
+      ['viewer', '观众 · <b>x</b>：<img src=x onerror=alert(1)>']
+    ])
+    assert.ok(page.document.querySelector('[data-audience-bot="panel"] img') === null, 'comment text never becomes markup')
+    for (let i = 0; i < 30; i++) panel.add({ role: 'viewer', name: 'n', text: `第${i}条`, at: 100 + i })
+    assert.equal(rows().length, 20)
+    assert.equal(rows().at(-1).textContent, '观众 · n：第29条')
+    assert.equal(addToPanel({ items: [{ role: 'host', text: '最后一句', at: 999 }] }), true)
+    assert.equal(rows().at(-1).textContent, '主播（语音）：最后一句')
+    const toggle = page.document.querySelector('[data-audience-bot="toggle"]')
+    assert.equal(toggle.textContent, '收起')
+    toggle.dispatchEvent(new page.window.Event('click'))
+    assert.equal(toggle.textContent, '展开')
+    dispose()
+    assert.ok(page.document.querySelector('[data-audience-bot="panel"]') === null, 'the panel leaves with the injection')
+    assert.equal(globalThis.__audienceBotPanel, undefined)
+    assert.equal(addToPanel({ items: [{ role: 'host', text: 'x' }] }), false, 'no panel, nothing to add to')
+  })
+})
+
+test('panel: the comment watcher and the send step feed it', async () => {
+  const page = roomPage()
+  const location = { origin: 'https://live.douyin.com', pathname: '/123456789012' }
+  await withPage(page, { location, getSelection: () => ({ removeAllRanges() {}, addRange() {} }) }, async () => {
+    let disposePanel, disposeWatcher
+    showPanel({}, { onDispose: (fn) => { disposePanel = fn } })
+    observeRoom({ ownName: '我' }, { emit() {}, onDispose: (fn) => { disposeWatcher = fn } })
+    const add = (text) => { const row = page.document.createElement('div'); row.textContent = text; page.rowsRoot.appendChild(row) }
+    add('小王：主播唱首歌')
+    await settle()
+    const input = page.document.querySelector('[contenteditable]')
+    page.document.createRange = () => ({ selectNodeContents() {} })
+    page.document.execCommand = (_command, _ui, value) => { input.textContent = value; return true }
+    page.document.querySelector('svg').addEventListener('click', () => { add(`我：${input.textContent}`); input.textContent = '' })
+    assert.deepEqual(await sendInRoom({ room: '123456789012', text: '@小王 马上安排' }), { ok: true, verified: true })
+    await settle()
+    const rows = [...page.document.querySelectorAll('[data-audience-bot="panel"] [data-role]')].map((row) => [row.getAttribute('data-role'), row.textContent])
+    assert.deepEqual(rows, [['viewer', '观众 · 小王：主播唱首歌'], ['ai', 'AI：@小王 马上安排']], 'the reply shows once, as the AI\'s')
+    disposeWatcher()
+    disposePanel()
+  })
+})
+
+// docs/design.md #8.1: the audio check — the room tab's own audio, measured once a second; nothing reaches the chat.
+const fakeAudio = (frames, { fail } = {}) => {
+  const calls = []
+  let release
+  const ended = new Promise((done) => { release = done })
+  return {
+    calls,
+    finish: () => release(),
+    browser: {
+      async captureAudio(tabId) {
+        calls.push(['capture', tabId])
+        if (fail) throw Object.assign(new Error(fail), { code: fail })
+        return {
+          tabId,
+          frames: { async *[Symbol.asyncIterator]() { for (const frame of frames) yield frame; await ended } },
+          async stop() { calls.push(['stop', tabId]); release() }
+        }
+      }
+    }
+  }
+}
+const frame = (sequence, value, length = 1600) => ({ sequence, pcm: new Float32Array(length).fill(value) })
+
+test('voice: levels in dB, silence below -60, failures in plain words', () => {
+  assert.equal(levelDb(0, 0), FLOOR_DB)
+  assert.equal(levelDb(0, 100), FLOOR_DB)
+  assert.equal(levelDb(100 * 0.5 * 0.5, 100), -6)
+  assert.equal(levelDb(100 * 1e-6 * 1e-6, 100), FLOOR_DB)
+  assert.equal(levelText(-61), '采音：本标签页 · 静音')
+  assert.equal(levelText(-23), '采音：本标签页 · 音量 -23 dB')
+  assert.equal(failureText('audio_platform_unsupported'), '采音失败：只支持 macOS Apple 芯片')
+  assert.equal(failureText('weird_code'), '采音失败：weird_code')
+})
+
+test('voice: one level line a second, a summary every 10 s with missing frames; stop ends it without onEnd', async () => {
+  let clock = 0
+  const frames = []
+  for (let i = 0; i < 12; i++) frames.push(frame(i < 3 ? i : i + 2, i < 6 ? 0.5 : 0))
+  const audio = fakeAudio(frames)
+  const status = []
+  const logs = []
+  const ends = []
+  const voice = startTabVoice({ browser: audio.browser, tabId: 'tab-28', setStatus: (text) => status.push(text), log: (text) => logs.push(text), onEnd: (detail) => ends.push(detail), now: () => (clock += 1000) })
+  await settle()
+  assert.deepEqual(audio.calls, [['capture', 'tab-28']])
+  assert.equal(status[0], '采音：正在启动…')
+  assert.equal(status[1], '采音：本标签页 · 音量 -6 dB')
+  assert.equal(status.at(-1), '采音：本标签页 · 静音')
+  const summary = logs.find((line) => line.startsWith('voice: ') && line.includes('frames'))
+  assert.match(summary, /s with sound, peak -6 dB/)
+  assert.match(summary, /, 2 missing$/, 'the two skipped sequence numbers are counted')
+  assert.ok(logs.every((line) => !/0\.5/.test(line)), 'no audio values in the log')
+  await voice.stop()
+  await settle()
+  assert.deepEqual(audio.calls.at(-1), ['stop', 'tab-28'])
+  assert.deepEqual(ends, [], 'stopping is not an end the caller retries')
+})
+
+test('voice: a failure says why and whether to retry; a stream that ends by itself asks for a retry', async () => {
+  const run = async (fail) => {
+    const audio = fakeAudio([], { fail })
+    const status = []
+    const ends = []
+    startTabVoice({ browser: audio.browser, tabId: 'tab-28', setStatus: (text) => status.push(text), log() {}, onEnd: (detail) => ends.push(detail) })
+    await settle()
+    return { status, ends }
+  }
+  assert.deepEqual(await run('audio_platform_unsupported'), { status: ['采音：正在启动…', '采音失败：只支持 macOS Apple 芯片'], ends: [{ retry: false, code: 'audio_platform_unsupported' }] })
+  assert.deepEqual((await run('stale_document')).ends, [{ retry: true, code: 'stale_document' }])
+  const audio = fakeAudio([frame(0, 0.1)])
+  const ends = []
+  const status = []
+  startTabVoice({ browser: audio.browser, tabId: 'tab-28', setStatus: (text) => status.push(text), log() {}, onEnd: (detail) => ends.push(detail) })
+  await settle()
+  audio.finish()
+  await settle()
+  assert.deepEqual(ends, [{ retry: true, code: 'audio_ended' }])
+  assert.equal(status.at(-1), '采音已停止，稍后重试')
+})
+
+test('panel: the status line shows, hides when empty, and stays when the list is collapsed', async () => {
+  const page = roomPage()
+  let dispose
+  await withPage(page, {}, async () => {
+    showPanel({}, { onDispose: (fn) => { dispose = fn } })
+    const line = () => page.document.querySelector('[data-audience-bot="status"]')
+    assert.equal(line().style.display, 'none')
+    assert.equal(setPanelStatus({ text: '采音：本标签页 · 音量 -20 dB' }), true)
+    assert.equal(line().textContent, '采音：本标签页 · 音量 -20 dB')
+    assert.equal(line().style.display, 'block')
+    page.document.querySelector('[data-audience-bot="toggle"]').dispatchEvent(new page.window.Event('click'))
+    assert.equal(line().style.display, 'block')
+    setPanelStatus({ text: '' })
+    assert.equal(line().style.display, 'none')
+    dispose()
+    assert.equal(setPanelStatus({ text: 'x' }), false)
+  })
+})
+
+test('connector: voice "tab" captures the taken tab, writes the panel line, skips the voice file, stops on release', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'douyin-voice-'))
+  const cwd = process.cwd()
+  process.chdir(dir)
+  t.after(() => process.chdir(cwd))
+  let definition
+  activate({ registerConnector: (value) => { definition = value }, log() {} })
+  const audio = fakeAudio([frame(0, 0.5)])
+  const calls = audio.calls
+  let listener
+  const browser = {
+    ...audio.browser,
+    async adoptTab(tabId) { calls.push(['adopt', tabId]); return { tabId, url: 'https://live.douyin.com/123456789012', documentId: 1 } },
+    async releaseTab(tabId) { calls.push(['release', tabId]) },
+    async inject(tabId, script) { calls.push(['inject', script.id]) },
+    async evaluate(tabId, script) { calls.push(['evaluate', script.args]); return true },
+    onEvent(fn) { listener = fn; return () => { listener = undefined } }
+  }
+  writeFileSync(join(dir, 'continuous-state.json'), JSON.stringify({ messages: [{ id: 'v1', text: '文件里的句子', at: Date.now() + 10 }] }))
+  writeFileSync(join(dir, 'target.json'), JSON.stringify({ tabId: 'tab-28', room: '123456789012', ownName: '我', voice: 'tab', voiceFile: join(dir, 'continuous-state.json') }))
+  const emits = []
+  definition.start({ browser, emit: (message) => emits.push(message), log() {} })
+  await settle()
+  await new Promise((done) => setTimeout(done, 50))
+  assert.deepEqual(calls.filter((call) => call[0] !== 'evaluate').map((call) => call.join(':')), ['adopt:tab-28', 'inject:audience-panel', 'inject:douyin-comments', 'capture:tab-28'])
+  const lines = calls.filter((call) => call[0] === 'evaluate').map((call) => call[1].text)
+  assert.equal(lines[0], '采音：正在启动…')
+  await new Promise((done) => setTimeout(done, 1100))
+  assert.deepEqual(emits, [], 'step 1 sends nothing to the chat; the voice file is not read')
+  assert.equal(calls.filter((call) => call[0] === 'capture').length, 1, 'one capture while it runs')
+  writeFileSync(join(dir, 'target.json'), JSON.stringify({ tabId: 'tab-28', room: '123456789012', ownName: '我' }))
+  await new Promise((done) => setTimeout(done, 1100))
+  const order = calls.map((call) => call[0])
+  assert.ok(order.lastIndexOf('stop') < order.lastIndexOf('release'), 'the capture stops before the tab is let go')
+  await definition.stop()
 })

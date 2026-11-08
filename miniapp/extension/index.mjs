@@ -1,9 +1,11 @@
 // douyin-live: a Douyin live room as a Dozin Gateway connector with `chat` (docs/design.md in this repository).
 // Comments come from an observer in the room tab, the host's voice from the caption program's snapshot file; both go
 // to the Gateway, which puts them into the chat attached to this connector. The chat's replies come back to `send`.
+// With `voice: "tab"` the extension captures the room tab's own audio instead (docs/design.md #8; step 1: measured only).
 import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import { observeRoom, sendInRoom } from './room.mjs'
+import { addToPanel, observeRoom, sendInRoom, setPanelStatus, showPanel } from './room.mjs'
+import { startTabVoice } from './voice.mjs'
 
 const SYSTEM_PROMPT = [
   '你在抖音直播间里替这个账号回弹幕。',
@@ -16,7 +18,9 @@ const SYSTEM_PROMPT = [
 const LIMIT = 50
 const TICK_MS = 1000
 const OBSERVER_ID = 'douyin-comments'
+const PANEL_ID = 'audience-panel'
 const VOICE_FILE_LIMIT = 512 * 1024
+const VOICE_RETRY_MS = 3000
 const ROOM = /^\d{6,20}$/
 const TAB = /^tab-\d+$/
 
@@ -29,14 +33,15 @@ const readTarget = async () => {
       tabId: raw.tabId,
       room: String(raw.room),
       ownName: typeof raw.ownName === 'string' ? raw.ownName : '',
-      voiceFile: typeof raw.voiceFile === 'string' && raw.voiceFile ? raw.voiceFile : ''
+      voiceFile: typeof raw.voiceFile === 'string' && raw.voiceFile ? raw.voiceFile : '',
+      voice: raw.voice === 'tab' ? 'tab' : ''
     }
   } catch {
     return undefined
   }
 }
 
-const sameTarget = (a, b) => Boolean(a && b) && a.tabId === b.tabId && a.room === b.room && a.ownName === b.ownName && a.voiceFile === b.voiceFile
+const sameTarget = (a, b) => Boolean(a && b) && a.tabId === b.tabId && a.room === b.room && a.ownName === b.ownName && a.voiceFile === b.voiceFile && a.voice === b.voice
 
 /** `@nickname ` in front when it still fits; a reply to the host or to oneself has none. */
 export const replyText = (reply) => {
@@ -58,8 +63,39 @@ export function activate(dozin) {
   let voiceSince = 0
   const voiceSeen = new Set()
   const results = new Map()
+  /** The room tab's audio capture (#8.1); `voiceBlocked` holds a failure that waits for a new target or takeover. */
+  let voice
+  let voiceRetryAt = 0
+  let voiceBlocked = ''
+
+  const stopVoice = async () => {
+    const current = voice
+    voice = undefined
+    voiceRetryAt = 0
+    voiceBlocked = ''
+    await current?.stop()
+  }
+
+  const ensureVoice = () => {
+    if (voice || voiceBlocked || Date.now() < voiceRetryAt) return
+    const tabId = room.tabId
+    const current = startTabVoice({
+      browser: ctx.browser,
+      tabId,
+      log: (text) => ctx?.log(text),
+      setStatus: (text) => void ctx?.browser.evaluate(tabId, { source: setPanelStatus.toString(), args: { text } }).catch(() => {}),
+      onEnd: ({ retry, code }) => {
+        if (voice !== current) return
+        voice = undefined
+        if (retry) voiceRetryAt = Date.now() + VOICE_RETRY_MS
+        else voiceBlocked = code
+      }
+    })
+    voice = current
+  }
 
   const release = async () => {
+    await stopVoice()
     const current = room
     room = undefined
     if (!current || !ctx?.browser) return
@@ -86,6 +122,8 @@ export function activate(dozin) {
       return report(`${wanted.tabId} is not room ${wanted.room}`)
     }
     problem = ''
+    // The panel first, so the comment watcher has it from its first comment (docs/design.md #7).
+    await ctx.browser.inject(wanted.tabId, { id: PANEL_ID, source: showPanel.toString(), args: { title: 'Audience BOT' } })
     await ctx.browser.inject(wanted.tabId, { id: OBSERVER_ID, source: observeRoom.toString(), args: { ownName: wanted.ownName } })
     room = { tabId: wanted.tabId, room: wanted.room }
     voiceSince = Date.now()
@@ -104,14 +142,18 @@ export function activate(dozin) {
       return
     }
     const messages = Array.isArray(state?.messages) ? state.messages : []
+    const shown = []
     for (const item of messages.slice(-50)) {
       if (typeof item?.id !== 'string' || typeof item.text !== 'string' || !Number.isFinite(item.at)) continue
       const text = item.text.trim()
       if (!text || text.length > 500 || item.at < voiceSince || voiceSeen.has(item.id)) continue
       voiceSeen.add(item.id)
       ctx.emit({ text, msgId: `voice-${item.id}`, senderName: '主播', role: 'host', modality: 'voice', at: item.at })
+      shown.push({ role: 'host', text, at: item.at })
     }
     if (voiceSeen.size > 500) for (const id of [...voiceSeen].slice(0, 250)) voiceSeen.delete(id)
+    // The panel only shows them; a page that has gone away loses nothing the chat needs.
+    if (shown.length && room) await ctx.browser.evaluate(room.tabId, { source: addToPanel.toString(), args: { items: shown } }).catch(() => {})
   }
 
   const tick = async () => {
@@ -125,7 +167,8 @@ export function activate(dozin) {
       }
       if (!target) return
       if (!room) await adopt(target)
-      if (room && target.voiceFile) await readVoice(target.voiceFile)
+      if (room && target.voice === 'tab') ensureVoice()
+      else if (room && target.voiceFile) await readVoice(target.voiceFile)
     } catch (error) {
       ctx.log(`tick failed: ${error?.code || error?.message || 'error'}`)
     } finally {

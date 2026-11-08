@@ -8,8 +8,8 @@ Audience BOT 让 Dozin 里的一个 AI 对话接管抖音直播间：弹幕和�
 
 | 目录 | 是什么 |
 |---|---|
-| [`extension/douyin-live/`](extension/douyin-live/) | Dozin 扩展：在直播间标签页里收弹幕、读主播语音、发回复，注册一个 Gateway connector |
-| [`miniapp/`](miniapp/) | Dozin 外置小程序"Audience BOT"：编辑 BOT 的人格（`Agent.md`），提示也可以和 AI 聊天来改 |
+| [`miniapp/`](miniapp/) | Dozin 外置小程序"Audience BOT"：编辑 BOT 的人格（`Agent.md`），提示也可以和 AI 聊天来改。安装它时一起装下面的扩展 |
+| [`miniapp/extension/`](miniapp/extension/) | 小程序带的 Dozin 扩展：在直播间标签页里收弹幕、读主播语音、发回复，注册一个 Gateway connector |
 | [`skill/douyin-live-reply/`](skill/douyin-live-reply/) | 技能：教 Dozin 的 AI 一句话接管直播间 |
 | [`kit/`](kit/) | 本机语音识别（macOS）：把主播的话转成文字给扩展读 |
 | [`docs/design.md`](docs/design.md) | 设计：组成、消息流、两层提示词、人格页行为 |
@@ -25,9 +25,9 @@ Audience BOT 让 Dozin 里的一个 AI 对话接管抖音直播间：弹幕和�
 ## 安装
 
 1. `git clone https://github.com/FlashHand/audience-bot.git`
-2. **扩展**：Dozin › 设置 › Extensions › 从本机目录安装，选 `extension/douyin-live/`，批准并打开。
+2. **小程序和扩展**：在 Dozin 对话里说「安装小程序 <clone 的目录>/miniapp」。小程序和它带的扩展一起装上（Dozin 的 `miniapp_install`）；然后在 设置 › Extensions 批准并打开扩展 `douyin-live`。
 3. **技能和语音识别**（要主播语音时）：在 macOS 上运行 `kit/install.sh`（需要 Xcode Command Line Tools 和 cmake），它会编译识别器、下载并校验模型、签名采音 App，并把技能装进 Dozin 的技能目录。只要弹幕不要语音时，可以只把 `skill/douyin-live-reply/` 复制到 `~/.dozin/skills/`。
-4. **小程序**：`yarn install && yarn pack:miniapp` 生成 `dist/io.github.flashhand.audience-bot-<version>.asar`，在支持外置小程序的 Dozin 里安装。
+4. **打包**（可选）：`yarn install && yarn pack:miniapp` 生成 `dist/io.github.flashhand.audience-bot-<version>.asar`，里面同样含扩展。
 
 ## 使用
 
