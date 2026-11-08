@@ -1,4 +1,4 @@
-/* Audience Bot persona page. Hierarchy comes from background, spacing and radius; no borders. */
+/* Audience BOT persona page. Hierarchy comes from background, spacing and radius; no borders. */
 :root {
   --page: oklch(0.978 0.004 247.858);
   --card: oklch(1 0 0);

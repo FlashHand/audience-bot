@@ -48,7 +48,7 @@ test('the package needs only its name and the browser capability; its connector 
   activate({ registerConnector: (value) => { definition = value }, log() {} })
   assert.equal(definition.id, undefined, 'the id defaults to the package name')
   assert.ok(Array.from(definition.systemPrompt).length <= 4000)
-  assert.deepEqual(definition.chat, { title: 'Audience Bot', roles: { host: '主播', viewer: '观众', self: '自己' }, maxLength: 50, maxPerMinute: 4 })
+  assert.deepEqual(definition.chat, { title: 'Audience BOT', roles: { host: '主播', viewer: '观众', self: '自己' }, maxLength: 50, maxPerMinute: 4 })
   for (const name of ['start', 'stop', 'send']) assert.equal(typeof definition[name], 'function')
 })
 
