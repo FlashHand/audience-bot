@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>ai.dozin.live-caption.local</string>
+<key>CFBundleName</key><string>Dozin Live Caption</string>
+<key>CFBundleExecutable</key><string>dozin-caption</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleVersion</key><string>1</string>
+<key>NSSpeechRecognitionUsageDescription</key><string>将您指定的直播间音频转成中文字幕，用于本地监听面板。</string>
+</dict></plist>

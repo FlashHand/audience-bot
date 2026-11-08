@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>抖音 BOT</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main class="douyin-bot" name="douyin-bot">
+    <header class="douyin-bot__header" name="douyin-bot__header">
+      <h1 class="douyin-bot__title">抖音 BOT</h1>
+      <p class="douyin-bot__subtitle">在这里写 BOT 在直播间的人格。保存后，下一条回复起生效。</p>
+    </header>
+
+    <div class="persona-notice" name="douyin-bot__notice" hidden>
+      <span class="persona-notice__text" name="douyin-bot__notice-text"></span>
+      <span class="persona-notice__spacer"></span>
+      <button class="persona-notice__action" name="douyin-bot__use-theirs" type="button" hidden>用别处改的</button>
+      <button class="persona-notice__action" name="douyin-bot__use-mine" type="button" hidden>用我的</button>
+    </div>
+
+    <section class="persona-editor" name="douyin-bot__persona-editor">
+      <textarea class="persona-editor__text" name="douyin-bot__persona-text" spellcheck="false"
+        placeholder="例：你是主播的直播间助手。语气温和，称呼观众为「家人们」；不评价外貌；有人问价格时回「看小黄车」。"></textarea>
+      <div class="persona-editor__footer" name="douyin-bot__persona-footer">
+        <span class="persona-editor__path" name="douyin-bot__persona-path">—</span>
+        <button class="icon-btn persona-editor__copy-path" name="douyin-bot__copy-path" type="button" aria-label="复制路径" title="复制路径">
+          <svg viewBox="0 0 24 24"><path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"/><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/></svg>
+        </button>
+        <span class="persona-editor__spacer"></span>
+        <span class="persona-editor__size" name="douyin-bot__persona-size">0.0 KB</span>
+        <span class="persona-editor__state" name="douyin-bot__persona-state"></span>
+        <button class="persona-editor__save" name="douyin-bot__save" type="button" disabled>保存</button>
+      </div>
+      <p class="persona-editor__warning" name="douyin-bot__persona-warning" hidden></p>
+    </section>
+
+    <aside class="ai-hint" name="douyin-bot__ai-hint">
+      <svg class="ai-hint__icon" viewBox="0 0 24 24"><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"/></svg>
+      <div class="ai-hint__body">
+        <span class="ai-hint__title">也可以和 AI 聊天来改</span>
+        <p class="ai-hint__text">在任意对话里告诉 AI 你想怎么改，AI 会直接改这份人格，这里会自动更新。</p>
+        <span class="ai-hint__example">例：「<span name="douyin-bot__example-text"></span>」
+          <button class="icon-btn ai-hint__copy-example" name="douyin-bot__copy-example" type="button" aria-label="复制这句话" title="复制这句话">
+            <svg viewBox="0 0 24 24"><path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"/><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/></svg>
+          </button>
+        </span>
+      </div>
+    </aside>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

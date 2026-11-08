@@ -1,0 +1,9 @@
+# Models and build output never go into Git. install.sh downloads the model (by URL + SHA256)
+# into the runtime directory, which defaults to ~/.dozin-live-caption/ (outside this repository).
+*.bin
+*.gguf
+*.onnx
+models/
+whisper.cpp/
+build/
+*.app/

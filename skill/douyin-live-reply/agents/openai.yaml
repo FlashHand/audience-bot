@@ -1,0 +1,4 @@
+interface:
+  display_name: "抖音直播间 AI 回复"
+  short_description: "douyin-live 扩展把弹幕和主播语音交给 Gateway，推进对话；AI 用 gateway_send 回弹幕。"
+  default_prompt: "Use $douyin-live-reply to 对这个直播间开启 AI 回复功能。"

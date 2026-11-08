@@ -1,0 +1,18 @@
+{
+  "name": "douyin-bot",
+  "version": "0.1.0",
+  "version_code": "261108120904",
+  "private": true,
+  "description": "Douyin live room AI bot for Dozin: a Gateway connector extension, a persona mini-app, a skill and a local speech kit.",
+  "license": "MIT",
+  "type": "module",
+  "repository": "github:dozin-ai/douyin-bot",
+  "scripts": {
+    "test": "for f in test/*.test.mjs; do node --test --test-isolation=none --test-timeout=60000 --test-force-exit \"$f\" || exit 1; done",
+    "pack:miniapp": "node scripts/pack-miniapp.mjs"
+  },
+  "devDependencies": {
+    "@electron/asar": "^4.3.1",
+    "linkedom": "^0.18.15"
+  }
+}

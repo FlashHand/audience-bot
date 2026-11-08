@@ -1,0 +1,99 @@
+/* Douyin BOT persona page. Hierarchy comes from background, spacing and radius; no borders. */
+:root {
+  --page: oklch(0.978 0.004 247.858);
+  --card: oklch(1 0 0);
+  --field: oklch(0.985 0.002 250);
+  --hint: oklch(0.552 0.016 285.938);
+  --ink: oklch(0.21 0.006 285.885);
+  --primary: oklch(0.546 0.215 262.881);
+  --primary-ink: oklch(1 0 0);
+  --muted-bg: oklch(0.9 0.01 260);
+  --tint: oklch(0.962 0.018 272.314);
+  --tint-ink: oklch(0.398 0.07 270);
+  --info-bg: oklch(0.951 0.026 236.824);
+  --warn-bg: oklch(0.962 0.059 95.617);
+  --warn-ink: oklch(0.476 0.114 61.907);
+  --error-bg: oklch(0.971 0.013 17.38);
+  --error: oklch(0.577 0.245 27.325);
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font: 13px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+}
+
+.douyin-bot {
+  height: 100%;
+  min-height: 0;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.douyin-bot__header { display: flex; flex-direction: column; gap: 2px; }
+.douyin-bot__title { font-size: 16px; }
+.douyin-bot__subtitle { color: var(--hint); }
+
+.persona-notice { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; background: var(--info-bg); }
+.persona-notice[hidden] { display: none; }
+.persona-notice--conflict { background: var(--warn-bg); color: var(--warn-ink); }
+.persona-notice--error { background: var(--error-bg); color: var(--error); }
+.persona-notice__spacer { flex: 1; }
+.persona-notice__action { padding: 2px 10px; border: 0; border-radius: 6px; background: oklch(1 0 0 / 0.7); color: inherit; font: inherit; cursor: pointer; }
+
+.persona-editor { flex: 1; min-height: 240px; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 8px; background: var(--card); }
+.persona-editor__text {
+  flex: 1;
+  min-height: 160px;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  outline: none;
+  resize: none;
+  background: var(--field);
+  color: var(--ink);
+  font: 13px/1.7 -apple-system, "PingFang SC", sans-serif;
+}
+.persona-editor__text:focus { background: oklch(0.975 0.006 260); }
+.persona-editor__text:disabled { color: var(--hint); }
+.persona-editor__footer { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.persona-editor__path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--hint); }
+.persona-editor__spacer { flex: 1; }
+.persona-editor__size, .persona-editor__state { color: var(--hint); font-size: 12px; white-space: nowrap; }
+.persona-editor__save { flex: none; padding: 3px 14px; border: 0; border-radius: 6px; background: var(--primary); color: var(--primary-ink); font: inherit; cursor: pointer; }
+.persona-editor__save:disabled { background: var(--muted-bg); color: var(--hint); cursor: default; }
+.persona-editor__warning { color: var(--warn-ink); font-size: 12px; }
+
+.icon-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--hint);
+  cursor: pointer;
+}
+.icon-btn:hover { background: oklch(0.94 0.012 260); }
+.icon-btn:disabled { cursor: default; opacity: 0.5; }
+.icon-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn--done { color: oklch(0.627 0.194 149.214); }
+
+.ai-hint { display: flex; gap: 10px; padding: 12px; border-radius: 8px; background: var(--tint); color: var(--tint-ink); }
+.ai-hint__icon { flex: none; width: 18px; height: 18px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ai-hint__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ai-hint__title { font-weight: 600; }
+.ai-hint__example { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.ai-hint__copy-example { color: var(--tint-ink); }

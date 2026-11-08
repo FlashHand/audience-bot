@@ -1,0 +1,10 @@
+{
+  "appId": "ai.dozin.douyin-bot",
+  "name": {
+    "zh": "抖音 BOT",
+    "en": "Douyin BOT"
+  },
+  "version": "0.1.0",
+  "version_code": "261108120904",
+  "entry": "index.html"
+}
