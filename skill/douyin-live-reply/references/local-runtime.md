@@ -1,6 +1,6 @@
 # 本机语音识别（kit）
 
-主播语音来自 douyin-bot 仓库的 `kit/`：一个 macOS 采音 App（ScreenCaptureKit，只采 Dozin 的应用音轨）加一个本地识别桥（whisper.cpp）。它把识别出的句子写进快照文件，扩展每秒读一次。kit 由用户装、由用户或 AI 用脚本启动，不在接管直播间的对话里常驻。
+主播语音来自 audience-bot 仓库的 `kit/`：一个 macOS 采音 App（ScreenCaptureKit，只采 Dozin 的应用音轨）加一个本地识别桥（whisper.cpp）。它把识别出的句子写进快照文件，扩展每秒读一次。kit 由用户装、由用户或 AI 用脚本启动，不在接管直播间的对话里常驻。
 
 运行目录默认 `~/.dozin-live-caption/`（环境变量 `RUNTIME_DIR` 可改），快照是 `<运行目录>/runtime/continuous-state.json`。
 

@@ -1,11 +1,11 @@
-// Douyin BOT persona page (docs/design.md #4): edits the Agent.md of the douyin-live connector through
+// Audience Bot persona page (docs/design.md #4): edits the Agent.md of the douyin-live connector through
 // MAESTROSDK.connectors. The page and the AI may edit the same file: every save carries the stamp it read, and a change
 // made elsewhere is either loaded (nothing unsaved here) or offered as a choice (unsaved edits here). Nothing is
 // overwritten silently.
 
 /** The connectors directory the douyin-live extension registers under (its package name). */
 export const CONNECTOR_DIR = 'douyin-live';
-export const EXAMPLE = '把抖音 BOT 的人格改得更活泼一点，多跟观众互动';
+export const EXAMPLE = '把Audience Bot 的人格改得更活泼一点，多跟观众互动';
 const DEFAULT_LIMIT = 16384;
 
 const TEXT = {
@@ -29,19 +29,19 @@ const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
  */
 export function mount(doc, sdk, { clipboard } = {}) {
   const el = (name) => doc.querySelector(`[name="${name}"]`);
-  const editor = el('douyin-bot__persona-text');
-  const pathEl = el('douyin-bot__persona-path');
-  const sizeEl = el('douyin-bot__persona-size');
-  const stateEl = el('douyin-bot__persona-state');
-  const saveBtn = el('douyin-bot__save');
-  const warning = el('douyin-bot__persona-warning');
-  const notice = el('douyin-bot__notice');
-  const noticeText = el('douyin-bot__notice-text');
-  const useTheirs = el('douyin-bot__use-theirs');
-  const useMine = el('douyin-bot__use-mine');
-  const copyPath = el('douyin-bot__copy-path');
-  const copyExample = el('douyin-bot__copy-example');
-  el('douyin-bot__example-text').textContent = EXAMPLE;
+  const editor = el('audience-bot__persona-text');
+  const pathEl = el('audience-bot__persona-path');
+  const sizeEl = el('audience-bot__persona-size');
+  const stateEl = el('audience-bot__persona-state');
+  const saveBtn = el('audience-bot__save');
+  const warning = el('audience-bot__persona-warning');
+  const notice = el('audience-bot__notice');
+  const noticeText = el('audience-bot__notice-text');
+  const useTheirs = el('audience-bot__use-theirs');
+  const useMine = el('audience-bot__use-mine');
+  const copyPath = el('audience-bot__copy-path');
+  const copyExample = el('audience-bot__copy-example');
+  el('audience-bot__example-text').textContent = EXAMPLE;
 
   const connectors = sdk?.connectors;
   const board = clipboard ?? globalThis.navigator?.clipboard;

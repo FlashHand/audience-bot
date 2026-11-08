@@ -8,9 +8,9 @@ description: >-
 
 # 抖音直播间接管（扩展 + Gateway）
 
-收发由 douyin-bot 仓库的 `extension/douyin-live/` 扩展完成，Gateway 负责把消息送进对话（设计见仓库的 `docs/design.md`）。本对话**不轮询、不起后台进程**：弹幕和主播语音以 `<gateway_messages>` 事件到达。
+收发由 audience-bot 仓库的 `extension/douyin-live/` 扩展完成，Gateway 负责把消息送进对话（设计见仓库的 `docs/design.md`）。本对话**不轮询、不起后台进程**：弹幕和主播语音以 `<gateway_messages>` 事件到达。
 
-下文 `<home>` 是应用主目录（Dozin Preview 为 `~/.dozin_preview`，正式版 `~/.dozin`）；`<repo>` 是用户 clone douyin-bot 仓库的目录，不知道就问用户。
+下文 `<home>` 是应用主目录（Dozin Preview 为 `~/.dozin_preview`，正式版 `~/.dozin`）；`<repo>` 是用户 clone audience-bot 仓库的目录，不知道就问用户。
 
 ## 0. 前提
 

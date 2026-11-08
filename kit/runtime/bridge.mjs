@@ -1,6 +1,6 @@
 // Local speech bridge for the Douyin live-reply kit.
 // Starts whisper.cpp's server on 127.0.0.1:18762 and exposes /health, /speech and /captions on 127.0.0.1:18761.
-// Replies are NOT generated here: the Dozin conversation model writes them (see douyin-bot-runbook.html).
+// Replies are NOT generated here: the Dozin conversation model writes them (see README.md).
 import { mkdir, open, readFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 

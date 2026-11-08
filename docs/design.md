@@ -1,13 +1,13 @@
-# 抖音 BOT 设计
+# Audience Bot 设计
 
-状态：v0.1.0，2026-11-08。抖音 BOT 是给 [Dozin](https://dozin.ai) 用的抖音直播间 AI 助手：弹幕和主播语音进入一个 Dozin 对话，对话里的 AI 按你写的人格回弹幕。它作为**外置**部件交付：不在 Dozin 的安装包里，每个部件单独安装，Dozin 只提供通用能力。
+状态：v0.1.0，2026-11-08。Audience Bot 是给 [Dozin](https://dozin.ai) 用的抖音直播间 AI 助手：弹幕和主播语音进入一个 Dozin 对话，对话里的 AI 按你写的人格回弹幕。它作为**外置**部件交付：不在 Dozin 的安装包里，每个部件单独安装，Dozin 只提供通用能力。
 
 ## #1 组成
 
 | 部分 | 目录 | 做什么 | 装到哪里 |
 |---|---|---|---|
 | 扩展 `douyin-live` | `extension/douyin-live/` | 在直播间标签页里收弹幕、读主播语音、发回复；注册一个带 `chat` 的 Gateway connector | `<home>/extensions/packages/douyin-live/`，在 设置 › Extensions 从目录安装、批准、打开 |
-| 小程序 `ai.dozin.douyin-bot` | `miniapp/` | 人格页：编辑 `connectors/douyin-live/Agent.md`，提示也可以和 AI 聊天来改 | `<home>/miniapps/ai.dozin.douyin-bot/<version_code>.asar` |
+| 小程序 `io.github.flashhand.audience-bot` | `miniapp/` | 人格页：编辑 `connectors/douyin-live/Agent.md`，提示也可以和 AI 聊天来改 | `<home>/miniapps/io.github.flashhand.audience-bot/<version_code>.asar` |
 | 技能 `douyin-live-reply` | `skill/douyin-live-reply/` | 教 Dozin 的 AI 接管一个直播间：写 `target.json`、请人允许标签页、接入对话、写人格 | `<home>/skills/douyin-live-reply/`（`kit/install.sh` 安装） |
 | 本机语音识别 | `kit/` | macOS 采音 App（只采 Dozin 的应用音轨）+ whisper.cpp 识别桥，把主播的话写成 `continuous-state.json` | 运行目录 `~/.dozin-live-caption/` |
 
@@ -76,6 +76,6 @@ MAESTROSDK.connectors.onAgentMdChange(cb: ({ dir, stamp }) => void): () => void
 
 ## #6 打包与版本
 
-- `yarn pack:miniapp`：把 `miniapp/` 打成 `dist/ai.dozin.douyin-bot-<version>.asar`，打印 sha256；`version_code` 写成本地构建时间 `YYMMDDHHmmss`（12 位字符串），同时写进 `miniapp.json` 和 `package.json`。
+- `yarn pack:miniapp`：把 `miniapp/` 打成 `dist/io.github.flashhand.audience-bot-<version>.asar`，打印 sha256；`version_code` 写成本地构建时间 `YYMMDDHHmmss`（12 位字符串），同时写进 `miniapp.json` 和 `package.json`。
 - 扩展不需要构建，目录即安装包。
 - 测试：`yarn test`，每个测试文件单独跑。

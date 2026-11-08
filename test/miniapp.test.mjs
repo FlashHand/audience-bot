@@ -13,7 +13,7 @@ const page = () => {
   const { window, document } = parseHTML(html)
   const el = (name) => document.querySelector(`[name="${name}"]`)
   const fire = (name, type) => el(name).dispatchEvent(new window.Event(type))
-  const type = (value) => { el('douyin-bot__persona-text').value = value; fire('douyin-bot__persona-text', 'input') }
+  const type = (value) => { el('audience-bot__persona-text').value = value; fire('audience-bot__persona-text', 'input') }
   return { document, el, fire, type, click: (name) => fire(name, 'click') }
 }
 
@@ -51,10 +51,10 @@ test('without MAESTROSDK.connectors the page says so and cannot be edited', asyn
   const p = page()
   const view = mount(p.document, undefined, { clipboard: { writeText: async () => {} } })
   await view.ready
-  assert.equal(p.el('douyin-bot__persona-text').disabled, true)
-  assert.equal(p.el('douyin-bot__save').disabled, true)
-  assert.equal(p.el('douyin-bot__notice').hidden, false)
-  assert.match(p.el('douyin-bot__notice-text').textContent, /MAESTROSDK\.connectors/)
+  assert.equal(p.el('audience-bot__persona-text').disabled, true)
+  assert.equal(p.el('audience-bot__save').disabled, true)
+  assert.equal(p.el('audience-bot__notice').hidden, false)
+  assert.match(p.el('audience-bot__notice-text').textContent, /MAESTROSDK\.connectors/)
 })
 
 test('loads the file, saves with the stamp it read, and ignores the change its own save causes', async () => {
@@ -62,23 +62,23 @@ test('loads the file, saves with the stamp it read, and ignores the change its o
   const sdk = fakeSdk()
   const view = mount(p.document, sdk, { clipboard: { writeText: async () => {} } })
   await view.ready
-  assert.equal(p.el('douyin-bot__persona-text').value, '旧人格')
-  assert.equal(p.el('douyin-bot__persona-path').textContent, '/home/u/.dozin/connectors/douyin-live/Agent.md')
-  assert.equal(p.el('douyin-bot__persona-state').textContent, '已保存')
-  assert.equal(p.el('douyin-bot__save').disabled, true)
+  assert.equal(p.el('audience-bot__persona-text').value, '旧人格')
+  assert.equal(p.el('audience-bot__persona-path').textContent, '/home/u/.dozin/connectors/douyin-live/Agent.md')
+  assert.equal(p.el('audience-bot__persona-state').textContent, '已保存')
+  assert.equal(p.el('audience-bot__save').disabled, true)
 
   p.type('新人格')
-  assert.equal(p.el('douyin-bot__persona-state').textContent, '未保存')
-  assert.equal(p.el('douyin-bot__save').disabled, false)
-  p.click('douyin-bot__save')
+  assert.equal(p.el('audience-bot__persona-state').textContent, '未保存')
+  assert.equal(p.el('audience-bot__save').disabled, false)
+  p.click('audience-bot__save')
   await settle()
   assert.deepEqual(sdk.writes, [{ dir: 'douyin-live', value: '新人格', stamp: 'v0' }])
   assert.equal(sdk.file.content, '新人格')
-  assert.equal(p.el('douyin-bot__persona-state').textContent, '已保存')
+  assert.equal(p.el('audience-bot__persona-state').textContent, '已保存')
 
   sdk.change()
   await settle()
-  assert.equal(p.el('douyin-bot__notice').hidden, true, 'our own write is not reported as a change')
+  assert.equal(p.el('audience-bot__notice').hidden, true, 'our own write is not reported as a change')
 })
 
 test('a change made elsewhere is loaded when nothing is unsaved here', async () => {
@@ -89,10 +89,10 @@ test('a change made elsewhere is loaded when nothing is unsaved here', async () 
   sdk.edit('AI 改过的人格')
   sdk.change()
   await settle()
-  assert.equal(p.el('douyin-bot__persona-text').value, 'AI 改过的人格')
-  assert.equal(p.el('douyin-bot__notice').hidden, false)
-  assert.match(p.el('douyin-bot__notice-text').textContent, /已载入/)
-  assert.equal(p.el('douyin-bot__use-mine').hidden, true)
+  assert.equal(p.el('audience-bot__persona-text').value, 'AI 改过的人格')
+  assert.equal(p.el('audience-bot__notice').hidden, false)
+  assert.match(p.el('audience-bot__notice-text').textContent, /已载入/)
+  assert.equal(p.el('audience-bot__use-mine').hidden, true)
 })
 
 test('a change made elsewhere while editing is a choice: "use mine" overwrites knowingly, "use theirs" loads it', async () => {
@@ -104,22 +104,22 @@ test('a change made elsewhere while editing is a choice: "use mine" overwrites k
   sdk.edit('AI 改过的人格')
   sdk.change()
   await settle()
-  assert.equal(p.el('douyin-bot__persona-text').value, '我正在写的', 'the editor is left as it is')
-  assert.equal(p.el('douyin-bot__use-mine').hidden, false)
-  assert.equal(p.el('douyin-bot__use-theirs').hidden, false)
-  p.click('douyin-bot__use-mine')
+  assert.equal(p.el('audience-bot__persona-text').value, '我正在写的', 'the editor is left as it is')
+  assert.equal(p.el('audience-bot__use-mine').hidden, false)
+  assert.equal(p.el('audience-bot__use-theirs').hidden, false)
+  p.click('audience-bot__use-mine')
   await settle()
   assert.equal(sdk.file.content, '我正在写的')
-  assert.equal(p.el('douyin-bot__notice').hidden, true)
+  assert.equal(p.el('audience-bot__notice').hidden, true)
 
   p.type('又改了一次')
   sdk.edit('AI 又改了')
   sdk.change()
   await settle()
-  p.click('douyin-bot__use-theirs')
+  p.click('audience-bot__use-theirs')
   await settle()
-  assert.equal(p.el('douyin-bot__persona-text').value, 'AI 又改了')
-  assert.equal(p.el('douyin-bot__persona-state').textContent, '已保存')
+  assert.equal(p.el('audience-bot__persona-text').value, 'AI 又改了')
+  assert.equal(p.el('audience-bot__persona-state').textContent, '已保存')
 })
 
 test('a save refused as changed shows the choice and writes nothing', async () => {
@@ -129,11 +129,11 @@ test('a save refused as changed shows the choice and writes nothing', async () =
   await view.ready
   sdk.edit('别处刚写的') // no change event yet: the page still holds stamp v0
   p.type('我的')
-  p.click('douyin-bot__save')
+  p.click('audience-bot__save')
   await settle()
   assert.equal(sdk.file.content, '别处刚写的')
-  assert.equal(p.el('douyin-bot__use-mine').hidden, false)
-  assert.equal(p.el('douyin-bot__persona-state').textContent, '未保存')
+  assert.equal(p.el('audience-bot__use-mine').hidden, false)
+  assert.equal(p.el('audience-bot__persona-state').textContent, '未保存')
 })
 
 test('over 16 KB is flagged but can still be saved; copies carry the file path; refresh asks only with unsaved edits', async () => {
@@ -144,13 +144,13 @@ test('over 16 KB is flagged but can still be saved; copies carry the file path; 
   await view.ready
   assert.equal(await sdk.hook()(), true, 'nothing unsaved: refresh goes ahead')
   p.type('字'.repeat(6000))
-  assert.equal(p.el('douyin-bot__persona-warning').hidden, false)
-  assert.match(p.el('douyin-bot__persona-warning').textContent, /不会进对话/)
-  assert.equal(p.el('douyin-bot__save').disabled, false)
+  assert.equal(p.el('audience-bot__persona-warning').hidden, false)
+  assert.match(p.el('audience-bot__persona-warning').textContent, /不会进对话/)
+  assert.equal(p.el('audience-bot__save').disabled, false)
   assert.equal(await sdk.hook()(), false, 'unsaved edits: the native confirm decides (declined here)')
 
-  p.click('douyin-bot__copy-path')
-  p.click('douyin-bot__copy-example')
+  p.click('audience-bot__copy-path')
+  p.click('audience-bot__copy-example')
   await settle()
   assert.deepEqual(copied, [
     '/home/u/.dozin/connectors/douyin-live/Agent.md',

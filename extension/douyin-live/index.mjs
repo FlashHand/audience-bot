@@ -135,7 +135,7 @@ export function activate(dozin) {
 
   dozin.registerConnector({
     systemPrompt: SYSTEM_PROMPT,
-    chat: { title: '抖音直播间', roles: { host: '主播', viewer: '观众', self: '自己' }, maxLength: LIMIT, maxPerMinute: 4 },
+    chat: { title: 'Audience Bot', roles: { host: '主播', viewer: '观众', self: '自己' }, maxLength: LIMIT, maxPerMinute: 4 },
     start(context) {
       if (!context.browser) throw new Error('browser_capability_required')
       ctx = context

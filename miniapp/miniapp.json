@@ -1,8 +1,8 @@
 {
-  "appId": "ai.dozin.douyin-bot",
+  "appId": "io.github.flashhand.audience-bot",
   "name": {
-    "zh": "抖音 BOT",
-    "en": "Douyin BOT"
+    "zh": "Audience Bot",
+    "en": "Audience Bot"
   },
   "version": "0.1.0",
   "version_code": "261108120904",

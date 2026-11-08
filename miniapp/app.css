@@ -1,4 +1,4 @@
-/* Douyin BOT persona page. Hierarchy comes from background, spacing and radius; no borders. */
+/* Audience Bot persona page. Hierarchy comes from background, spacing and radius; no borders. */
 :root {
   --page: oklch(0.978 0.004 247.858);
   --card: oklch(1 0 0);
@@ -27,7 +27,7 @@ body {
   font: 13px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
 }
 
-.douyin-bot {
+.audience-bot {
   height: 100%;
   min-height: 0;
   max-width: 880px;
@@ -38,9 +38,9 @@ body {
   gap: 12px;
 }
 
-.douyin-bot__header { display: flex; flex-direction: column; gap: 2px; }
-.douyin-bot__title { font-size: 16px; }
-.douyin-bot__subtitle { color: var(--hint); }
+.audience-bot__header { display: flex; flex-direction: column; gap: 2px; }
+.audience-bot__title { font-size: 16px; }
+.audience-bot__subtitle { color: var(--hint); }
 
 .persona-notice { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; background: var(--info-bg); }
 .persona-notice[hidden] { display: none; }
