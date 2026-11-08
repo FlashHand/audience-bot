@@ -1,5 +1,7 @@
 # audience-bot · 抖音直播间 AI 助手（Dozin）
 
+> **已搬家 / Moved (2026-11-08)**：Audience BOT 现在在 [FlashHand/miniapp-playground](https://github.com/FlashHand/miniapp-playground/tree/main/audience-bot) 的 `audience-bot/` 目录继续开发，本仓库不再更新。Development continues in the `audience-bot/` directory of miniapp-playground; this repository is no longer updated.
+
 An AI assistant for Douyin (抖音) live rooms, built for [Dozin](https://dozin.ai): live comments and the host's voice flow into a Dozin chat, and the chat's AI replies as comments, following a persona you write.
 
 Audience BOT 让 Dozin 里的一个 AI 对话接管抖音直播间：弹幕和主播语音进入对话，AI 按你写的人格回弹幕。对话里不起后台进程，消息由 Dozin 的 Gateway 推进对话。
