@@ -1,5 +1,7 @@
 // Packs miniapp/ into dist/<appId>-<version>.asar (docs/design.md #5) and prints its sha256.
-// version_code is the local build time, YYMMDDHHmmss, written into miniapp.json and package.json.
+// version_code is the local build time, YYMMDDHHmmss, written into miniapp.json and package.json. manifest.json is kept
+// identical to miniapp.json: Cowork reads manifest.json (micromeet-cowork docs/features/miniapp-auth.md #2.1), Dozin still
+// reads miniapp.json until its own rename.
 import { createPackage } from '@electron/asar'
 import { createHash } from 'node:crypto'
 import { cp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
@@ -19,6 +21,7 @@ const stamp = async (file) => {
 }
 
 const manifest = await stamp('miniapp/miniapp.json')
+await writeFile(path('miniapp/manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 await stamp('package.json')
 if (!/^[a-z0-9]+(\.[a-z0-9-]+)+$/.test(manifest.appId)) throw new Error(`appId must be lowercase reverse-domain: ${manifest.appId}`)
 const entry = manifest.entry ?? 'index.html'
